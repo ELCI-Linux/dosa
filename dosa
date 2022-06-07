@@ -1,0 +1,54 @@
+#! /bin/bash
+
+	zenity --question \
+	--title="dosa - root?" \
+	--text="Would you like to run dosa as root?"
+		if [ $? -eq "0" ]; then
+		user="root" usr_rule=":RO"
+		elif [ $? -eq "1" ]; then
+		user=$(cut -d: -f1 /etc/password \
+		yad --list \
+		--title="dosa" \
+		--text="Select a user" | \
+		cut -f 1 -d "|")
+		usr_rule=""
+		fi
+
+	if [ ${#cmd} -eq "0" ]; then
+	cmd_rule=""
+	else
+	cmd_rule=":RO"
+	fi
+
+	dosa=$(yad --form \
+	--title="Dosa" \
+	--text="Select your doas settings" \
+	--field="$user"$usr_rule \
+	--field="Password":H \
+	--field="Command"$cmd_rule \
+	--field="Non interactive mode":CHK \
+	--button="Clear peristent authentications":'doas -L' \
+	--button="doas":0)
+
+	cmd=$(echo $dosa | cut -f 3 -d "|")
+	non_int=$(echo $dosa | cut -f 4 -d "|")
+	exe_shell=$(echo $dosa | cut -f 5 -d "|")
+
+	if [[ $non_int == *"TRUE*" ]]; then
+	NI="-n"
+	else
+	NI=""
+	fi
+
+	if [[ $exe_shell == *"TRUE"* ]]; then
+	XS="-s"
+	else
+	XS=""
+	fi
+
+	if [ $? -eq "0" ]; then
+	zenity --notification --text="doas $NI $XS -u $user $cmd"
+	doas $NI $XS -u $user $cmd
+	fi
+
+
